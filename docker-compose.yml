@@ -1,18 +1,6 @@
 
 
-version: "3.9"
-
 services:
-
-  mlflow:
-
-    image: datascientest/mlflow-exam-apple:latest
-
-    container_name: mlflow-server
-
-    ports:
-      - "5000:5000"
-
 
   api:
 
@@ -23,8 +11,8 @@ services:
     ports:
       - "8000:8000"
 
-    depends_on:
-      - mlflow
-
     env_file:
       - .env
+
+    volumes:
+      - ./logs:/app/logs
