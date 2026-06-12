@@ -17,7 +17,7 @@ import time
 
 start = time.time()
 
-mlflow.set_tracking_uri("file:./mlruns")
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
 
 print("URI:", time.time() - start)
 
