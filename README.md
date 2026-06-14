@@ -65,8 +65,14 @@ pip install uv
 Clone the repository:
 
 ```bash
-git clone <your-repository-url>
+git clone  https://github.com/<votre-username>/AI-Act-Course.git
 cd AI-Act-Course
+```
+
+Go to right branch (chapitre-2):
+
+```bash
+git checkout chapitre-2
 ```
 
 Install dependencies:
