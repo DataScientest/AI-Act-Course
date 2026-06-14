@@ -1,341 +1,97 @@
-# Exercice central — Audit Trail, Logging et Traçabilité des prédictions
+# Chapter 3 - Audit Trail, Logging & Prediction Traceability
 
-## Objectif
+## Overview
 
-L’objectif de cet exercice est de transformer un simple modèle scikit-learn en un mini système MLOps traçable capable de :
+This project demonstrates how to transform a machine learning model into a **traceable and auditable AI service**.
 
-* servir des prédictions via une API
-* enregistrer des audit logs structurés
-* pseudonymiser les utilisateurs
-* relier une prédiction au pipeline d’entraînement
-* reconstituer l’historique complet d’une décision
+Starting from a trained Iris classification model, we build a complete inference system with:
 
-L’exercice s’inspire directement des notions vues dans le chapitre :
+- FastAPI
+- MLflow metadata tracking
+- Structured audit logs
+- User pseudonymization
+- Prediction traceability
+- GDPR and AI Act considerations
 
-* audit trail
-* logging structuré
-* traçabilité
-* RGPD
-* AI Act
+The objective is to understand how to monitor and investigate AI systems once they are deployed in production.
 
 ---
 
-# Ce que vous allez construire
+## Learning Objectives
 
-À la fin de l’exercice, vous disposerez :
+By completing this exercise, you will learn how to:
 
-* d’une API FastAPI
-* d’un système de logs JSONL
-* d’une pseudonymisation HMAC
-* d’un tracking MLflow
-* d’un script d’audit trail
-* d’une Model Card reliée au pipeline ML
+- Serve a machine learning model through an API
+- Implement structured logging with Structlog
+- Create an audit trail for predictions
+- Link predictions to MLflow runs and Git commits
+- Pseudonymize user identifiers using HMAC-SHA256
+- Reconstruct the history of a prediction
+- Apply GDPR and AI Act logging principles
 
 ---
 
-# Architecture du projet
+## Project Architecture
 
 ```text
 exercice/
-│
 ├── app/
 │   └── main.py
-│
+├── src/
+│   ├── train.py
+│   └── audit_query.py
 ├── model_artifacts/
 │   ├── model.pkl
-│   ├── run_id.txt
-│   └── model_metadata.pkl
-│
+│   ├── model_metadata.pkl
+│   └── run_id.txt
 ├── logs/
 │   └── audit.jsonl
-│
-│
 ├── docs/
-│   └── audit_trail.md
-│
-├── train.py
-├── audit_query.py
-├── model_card.md
-│
-├── requirements.txt
+│   ├── audit_trail.md
+│   └── model_card.md
 ├── Dockerfile
 ├── docker-compose.yml
-│
-├── .env
-├── .gitignore
-│
 ├── pyproject.toml
-└── uv.lock
+├── requirements.txt
+└── .env
 ```
 
 ---
 
-# Technologies utilisées
+## Tech Stack
 
-| Outil        | Rôle                         |
-| ------------ | ---------------------------- |
-| FastAPI      | API d’inférence              |
-| structlog    | logs JSON structurés         |
-| MLflow       | tracking entraînement        |
-| Docker       | conteneurisation             |
-| uv           | gestion environnement Python |
-| scikit-learn | modèle ML                    |
-
----
-
-# Étape 1 — Cloner le repository
-
-Clonez le repository de départ.
-
-```bash
-git clone <REPO_URL>
-
-cd exercice
-```
+- Python
+- FastAPI
+- Scikit-Learn
+- MLflow
+- Structlog
+- Docker
+- UV
+- HMAC-SHA256
 
 ---
 
-# Étape 2 — Initialiser l’environnement Python
+## Features
 
-Nous utiliserons uv afin de reproduire exactement le même environnement Python.
+### Model Training
 
-## Initialiser le projet
+The training pipeline:
 
-```bash
-uv init
+- Loads the Iris dataset
+- Trains a RandomForestClassifier
+- Logs metrics to MLflow
+- Stores model metadata
+- Saves model artifacts
+
+### Prediction API
+
+The API exposes:
+
+```http
+POST /predict
 ```
 
-## Installer les dépendances
-
-```bash
-uv add -r requirements.txt
-```
-
----
-
-# Étape 3 — Lancer MLflow
-
-Le projet contient déjà un fichier :
-
-```text
-docker-compose.yml
-```
-
-Lancez uniquement le serveur MLflow :
-
-```bash
-docker compose up mlflow
-```
-
-MLflow sera accessible sur :
-
-```text
-http://localhost:5000
-```
-
----
-
-# Étape 4 — Entraîner le modèle
-
-Le fichier :
-
-```text
-train.py
-```
-
-permet de :
-
-* entraîner un modèle RandomForestClassifier
-* logger les métriques dans MLflow
-* récupérer le git SHA
-* récupérer le MLflow Run ID
-* sauvegarder les métadonnées du modèle
-
-Exécutez le script :
-
-```bash
-uv run train.py
-```
-
-Après exécution, vous devriez obtenir :
-
-```text
-model_artifacts/
-├── model.pkl
-├── run_id.txt
-└── model_metadata.pkl
-```
-
----
-
-# Étape 5 — Compléter la Model Card
-
-Le repository contient un fichier :
-
-```text
-model_card.md
-```
-
-Complétez votre propre Model Card avec :
-
-* le nom du modèle
-* le dataset utilisé
-* les métriques
-* les limitations
-* les usages prévus
-* le git SHA
-* le MLflow Run ID
-
-L’objectif est de relier la documentation :
-
-* au modèle
-* au code
-* au pipeline d’entraînement
-
----
-
-# Étape 6 — Générer une clé HMAC
-
-Ouvrez un terminal Python :
-
-```bash
-python
-```
-
-Puis :
-
-```python
-import secrets
-
-secrets.token_hex(32)
-```
-
-Exemple :
-
-```text
-7f9c2d91a84be63f5c7d2e1ab49f0c8d
-```
-
-Créez ensuite un fichier :
-
-```text
-.env
-```
-
-Ajoutez :
-
-```env
-AUDIT_HMAC_KEY=7f9c2d91a84be63f5c7d2e1ab49f0c8d
-```
-
-Ajoutez également `.env` dans `.gitignore`.
-
----
-
-# Étape 7 — Construire l’API FastAPI
-
-Créez le fichier :
-
-```text
-app/main.py
-```
-
-L’API devra :
-
-* charger le modèle
-* charger les métadonnées MLflow
-* servir les prédictions
-* pseudonymiser les utilisateurs
-* mesurer la latence
-* générer des audit logs JSON
-
-Les logs devront notamment contenir :
-
-* request_id
-* model_version
-* git_sha
-* mlflow_run_id
-* prediction
-* confidence
-* latency_ms
-* user_id_pseudo
-
----
-
-# Étape 8 — Construire le script d’audit
-
-Créez :
-
-```text
-audit_query.py
-```
-
-Le script devra permettre de reconstruire l’historique d’une prédiction à partir d’un :
-
-```text
-request_id
-```
-
-Exemple :
-
-```bash
-uv run audit_query.py --request_id <REQUEST_ID>
-```
-
-Le script devra afficher :
-
-* la prédiction
-* le score de confiance
-* le modèle utilisé
-* le git SHA
-* le MLflow Run ID
-* la Model Card associée
-
----
-
-# Étape 9 — Dockeriser l’API
-
-Le projet contient déjà :
-
-```text
-Dockerfile
-```
-
-et :
-
-```text
-docker-compose.yml
-```
-
-Lancez toute la stack :
-
-```bash
-docker compose up --build
-```
-
-Cette commande va :
-
-* lancer MLflow
-* construire l’image Docker
-* lancer l’API FastAPI
-
----
-
-# Étape 10 — Tester l’API
-
-Ouvrez :
-
-```text
-http://localhost:8000/docs
-```
-
-Vous devriez voir la documentation Swagger.
-
----
-
-# Endpoint /predict
-
-Exemple de payload :
+Example payload:
 
 ```json
 {
@@ -347,11 +103,11 @@ Exemple de payload :
 }
 ```
 
-Réponse attendue :
+Example response:
 
 ```json
 {
-  "request_id": "...",
+  "request_id": "c9d7b1e8",
   "prediction": 0,
   "confidence": 0.98
 }
@@ -359,51 +115,218 @@ Réponse attendue :
 
 ---
 
-# Étape 11 — Observer les audit logs
+### Audit Logging
 
-Ouvrez :
+Every prediction generates an audit record containing:
+
+- Request ID
+- Model version
+- Git SHA
+- MLflow Run ID
+- Prediction
+- Confidence score
+- Latency
+- Pseudonymized user ID
+
+Example:
+
+```json
+{
+  "request_id": "c9d7b1e8",
+  "model_version": "iris-v1",
+  "git_sha": "abc123",
+  "mlflow_run_id": "run_001",
+  "prediction": 0,
+  "confidence": 0.98,
+  "latency_ms": 42,
+  "user_id_pseudo": "9b2fa..."
+}
+```
+
+Logs are stored in:
 
 ```text
 logs/audit.jsonl
 ```
 
-Exemple :
+---
 
-```json
-{
-  "request_id": "...",
-  "model_version": "iris-v1",
-  "git_sha": "a74f21d",
-  "mlflow_run_id": "3e91ab2",
-  "prediction": 0,
-  "confidence": 0.98,
-  "latency_ms": 12,
-  "user_id_pseudo": "8f3a9ab2..."
-}
+## Installation
+
+Switch to the second branch 'chapitre-3'
+
+```bash
+git checkout chapitre-3
 ```
 
-Chaque prédiction devient donc traçable.
+Install dependencies:
+
+```bash
+uv sync
+```
 
 ---
 
+## Train the Model
 
-# Résultat final
+Run:
 
-À la fin de cet exercice, vous avez construit une première version d’un système ML capable de :
+```bash
+uv run src/train.py
+```
 
-* exposer un modèle via une API
-* tracer chaque prédiction
-* pseudonymiser les utilisateurs
-* relier une prédiction au pipeline ML
-* reconstruire un historique complet via un audit trail
+Expected output:
 
-Même si cette architecture reste volontairement simplifiée, elle reprend déjà plusieurs principes fondamentaux des systèmes MLOps modernes :
-
-* observabilité
-* auditabilité
-* reproductibilité
-* gouvernance des modèles
-* traçabilité
+```text
+model_artifacts/
+├── model.pkl
+├── model_metadata.pkl
+└── run_id.txt
+```
 
 ---
 
+## Configure Environment Variables
+
+Generate a secret key:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Create a `.env` file:
+
+```env
+AUDIT_HMAC_KEY=<your-secret-key>
+```
+
+---
+
+## Run the API
+
+Using Docker:
+
+```bash
+docker compose up --build api
+```
+
+The API will be available at:
+
+```text
+http://localhost:8000
+```
+
+Swagger documentation:
+
+```text
+http://localhost:8000/docs
+```
+
+---
+
+## Test a Prediction
+
+Using cURL:
+
+```bash
+curl -X POST http://localhost:8000/predict \
+-H "Content-Type: application/json" \
+-d '{
+  "sepal_length": 5.1,
+  "sepal_width": 3.5,
+  "petal_length": 1.4,
+  "petal_width": 0.2,
+  "user_id": "12345"
+}'
+```
+
+---
+
+## Query an Audit Trail
+
+Use the generated request ID:
+
+```bash
+uv run src/audit_query.py --request_id <REQUEST_ID>
+```
+
+Example output:
+
+```text
+=== Audit Trail ===
+
+Request ID      : c9d7b1e8
+Prediction      : 0
+Confidence      : 0.98
+Latency (ms)    : 42
+
+--- Model Metadata ---
+
+Model Version   : iris-v1
+MLflow Run ID   : run_001
+Git SHA         : abc123
+
+--- User ---
+
+User Pseudonym  : 9b2fa...
+```
+
+---
+
+## GDPR & AI Act Compliance
+
+## GDPR & AI Act Compliance
+
+Create a `docs/audit_trail.md` document describing the audit logging policy of the application, including the data collected, the purpose of collection (debugging, auditing, compliance, and incident investigation), the GDPR legal basis (Articles 6.1.f and 6.1.c), log retention period, and users' rights regarding their personal data.
+
+This exercise follows several good practices inspired by:
+
+### GDPR
+
+- Data minimization
+- User pseudonymization
+- Privacy by design
+- Limited retention period
+- User rights management
+
+### AI Act
+
+- Article 12: Logging requirements
+- Article 19: Log retention
+- Article 72: Post-market monitoring
+
+---
+
+## Deliverables
+
+### GitHub Repository
+
+Must contain:
+
+- FastAPI application
+- Training pipeline
+- Audit trail system
+- Model Card
+- GDPR logging documentation
+- README
+
+### Documentation
+
+- `docs/model_card.md`
+- `docs/audit_trail.md`
+
+---
+
+## Key Concepts Covered
+
+- Audit Trail
+- Structured Logging
+- Model Traceability
+- MLflow
+- FastAPI
+- GDPR
+- AI Act
+- Privacy by Design
+- MLOps Fundamentals
+
+---
