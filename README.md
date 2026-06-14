@@ -1,409 +1,185 @@
-# Exercice central — Audit Trail, Logging et Traçabilité des prédictions
+# Chapter 2 - Model Cards and Documentation
 
-## Objectif
+## Overview
 
-L’objectif de cet exercice est de transformer un simple modèle scikit-learn en un mini système MLOps traçable capable de :
+This exercise introduces the concept of **Model Cards**, a standardized way to document machine learning models.
 
-* servir des prédictions via une API
-* enregistrer des audit logs structurés
-* pseudonymiser les utilisateurs
-* relier une prédiction au pipeline d’entraînement
-* reconstituer l’historique complet d’une décision
+The objective is to understand how model documentation improves:
 
-L’exercice s’inspire directement des notions vues dans le chapitre :
+- Transparency
+- Reproducibility
+- Traceability
+- AI governance and compliance (AI Act)
 
-* audit trail
-* logging structuré
-* traçabilité
-* RGPD
-* AI Act
+You will train a simple machine learning model on the Iris dataset and progressively complete a Model Card describing the model, its performance, limitations, and intended use.
 
 ---
 
-# Ce que vous allez construire
+## Learning Objectives
 
-À la fin de l’exercice, vous disposerez :
+By completing this exercise, you will learn how to:
 
-* d’une API FastAPI
-* d’un système de logs JSONL
-* d’une pseudonymisation HMAC
-* d’un tracking MLflow
-* d’un script d’audit trail
-* d’une Model Card reliée au pipeline ML
+- Train a machine learning model
+- Document a model using a Model Card
+- Describe datasets, metrics, and limitations
+- Publish documentation on Hugging Face Hub
+- Apply documentation practices aligned with responsible AI principles
 
 ---
 
-# Architecture du projet
+## Project Structure
 
 ```text
-exercice/
-│
-├── app/
-│   └── main.py
-│
-├── model_artifacts/
-│   ├── model.pkl
-│   ├── run_id.txt
-│   └── model_metadata.pkl
-│
-├── logs/
-│   └── audit.jsonl
-│
-│
-├── docs/
-│   └── audit_trail.md
-│
+chapitre-2/
 ├── train.py
-├── audit_query.py
 ├── model_card.md
-│
-├── requirements.txt
-├── Dockerfile
-├── docker-compose.yml
-│
-├── .env
-├── .gitignore
-│
 ├── pyproject.toml
-└── uv.lock
+└── .env.example
 ```
 
----
-
-# Technologies utilisées
-
-| Outil        | Rôle                         |
-| ------------ | ---------------------------- |
-| FastAPI      | API d’inférence              |
-| structlog    | logs JSON structurés         |
-| MLflow       | tracking entraînement        |
-| Docker       | conteneurisation             |
-| uv           | gestion environnement Python |
-| scikit-learn | modèle ML                    |
+| File | Description |
+|--------|-------------|
+| `train.py` | Training script (provided, do not modify) |
+| `model_card.md` | Model Card template to complete |
+| `pyproject.toml` | Project dependencies |
+| `.env.example` | Hugging Face token template |
 
 ---
 
-# Étape 1 — Cloner le repository
+## Prerequisites
 
-Clonez le repository de départ.
+- Git
+- UV package manager
+- Hugging Face account
+
+Install UV if needed:
 
 ```bash
-git clone <REPO_URL>
-
-cd exercice
+pip install uv
 ```
 
 ---
 
-# Étape 2 — Initialiser l’environnement Python
+## Installation
 
-Nous utiliserons uv afin de reproduire exactement le même environnement Python.
-
-## Initialiser le projet
+Clone the repository:
 
 ```bash
-uv init
+git clone <your-repository-url>
+cd chapitre-2
 ```
 
-## Installer les dépendances
+Install dependencies:
 
 ```bash
-uv add -r requirements.txt
+uv sync
 ```
 
 ---
 
-# Étape 3 — Lancer MLflow
+## Run the Training
 
-Le projet contient déjà un fichier :
-
-```text
-docker-compose.yml
-```
-
-Lancez uniquement le serveur MLflow :
-
-```bash
-docker compose up mlflow
-```
-
-MLflow sera accessible sur :
-
-```text
-http://localhost:5000
-```
-
----
-
-# Étape 4 — Entraîner le modèle
-
-Le fichier :
-
-```text
-train.py
-```
-
-permet de :
-
-* entraîner un modèle RandomForestClassifier
-* logger les métriques dans MLflow
-* récupérer le git SHA
-* récupérer le MLflow Run ID
-* sauvegarder les métadonnées du modèle
-
-Exécutez le script :
+Launch the training script:
 
 ```bash
 uv run train.py
 ```
 
-Après exécution, vous devriez obtenir :
+This script:
 
-```text
-model_artifacts/
-├── model.pkl
-├── run_id.txt
-└── model_metadata.pkl
-```
+- Loads the Iris dataset
+- Trains a RandomForestClassifier
+- Evaluates the model
+- Displays classification metrics
+- Saves the trained model
+
+Keep the generated metrics, as they will be required to complete the Model Card.
 
 ---
 
-# Étape 5 — Compléter la Model Card
+## Complete the Model Card
 
-Le repository contient un fichier :
+Open:
 
 ```text
 model_card.md
 ```
 
-Complétez votre propre Model Card avec :
+Complete each section as you progress through the chapter:
 
-* le nom du modèle
-* le dataset utilisé
-* les métriques
-* les limitations
-* les usages prévus
-* le git SHA
-* le MLflow Run ID
-
-L’objectif est de relier la documentation :
-
-* au modèle
-* au code
-* au pipeline d’entraînement
+- Model Details
+- Intended Use
+- Factors
+- Metrics
+- Training Data
+- Evaluation Data
+- Quantitative Analyses
+- Ethical Considerations
+- Caveats and Recommendations
+- Reproducibility
 
 ---
 
-# Étape 6 — Générer une clé HMAC
+## Hugging Face Publication
 
-Ouvrez un terminal Python :
+Create a `.env` file:
 
 ```bash
-python
+cp .env.example .env
 ```
 
-Puis :
-
-```python
-import secrets
-
-secrets.token_hex(32)
-```
-
-Exemple :
-
-```text
-7f9c2d91a84be63f5c7d2e1ab49f0c8d
-```
-
-Créez ensuite un fichier :
-
-```text
-.env
-```
-
-Ajoutez :
+Add your Hugging Face token:
 
 ```env
-AUDIT_HMAC_KEY=7f9c2d91a84be63f5c7d2e1ab49f0c8d
+HF_TOKEN="hf_xxxxxxxxxxxxxxxxx"
 ```
 
-Ajoutez également `.env` dans `.gitignore`.
-
----
-
-# Étape 7 — Construire l’API FastAPI
-
-Créez le fichier :
-
-```text
-app/main.py
-```
-
-L’API devra :
-
-* charger le modèle
-* charger les métadonnées MLflow
-* servir les prédictions
-* pseudonymiser les utilisateurs
-* mesurer la latence
-* générer des audit logs JSON
-
-Les logs devront notamment contenir :
-
-* request_id
-* model_version
-* git_sha
-* mlflow_run_id
-* prediction
-* confidence
-* latency_ms
-* user_id_pseudo
-
----
-
-# Étape 8 — Construire le script d’audit
-
-Créez :
-
-```text
-audit_query.py
-```
-
-Le script devra permettre de reconstruire l’historique d’une prédiction à partir d’un :
-
-```text
-request_id
-```
-
-Exemple :
+Create a publication script:
 
 ```bash
-uv run audit_query.py --request_id <REQUEST_ID>
+publish_card.py
 ```
 
-Le script devra afficher :
-
-* la prédiction
-* le score de confiance
-* le modèle utilisé
-* le git SHA
-* le MLflow Run ID
-* la Model Card associée
-
----
-
-# Étape 9 — Dockeriser l’API
-
-Le projet contient déjà :
-
-```text
-Dockerfile
-```
-
-et :
-
-```text
-docker-compose.yml
-```
-
-Lancez toute la stack :
+Run:
 
 ```bash
-docker compose up --build
+uv run publish_card.py
 ```
 
-Cette commande va :
+This will:
 
-* lancer MLflow
-* construire l’image Docker
-* lancer l’API FastAPI
+- Create a Hugging Face repository (if needed)
+- Upload the Model Card
+- Associate the documentation with the model repository
 
 ---
 
-# Étape 10 — Tester l’API
+## Expected Deliverables
 
-Ouvrez :
+### GitHub Repository
 
-```text
-http://localhost:8000/docs
-```
+Must contain:
 
-Vous devriez voir la documentation Swagger.
+- Source code
+- Completed `model_card.md`
+- README.md
 
----
+### Hugging Face Repository
 
-# Endpoint /predict
+Must contain:
 
-Exemple de payload :
-
-```json
-{
-  "sepal_length": 5.1,
-  "sepal_width": 3.5,
-  "petal_length": 1.4,
-  "petal_width": 0.2,
-  "user_id": "12345"
-}
-```
-
-Réponse attendue :
-
-```json
-{
-  "request_id": "...",
-  "prediction": 0,
-  "confidence": 0.98
-}
-```
+- Published Model Card
+- Private repository named `ch02-iris`
 
 ---
 
-# Étape 11 — Observer les audit logs
+## Key Concepts Covered
 
-Ouvrez :
-
-```text
-logs/audit.jsonl
-```
-
-Exemple :
-
-```json
-{
-  "request_id": "...",
-  "model_version": "iris-v1",
-  "git_sha": "a74f21d",
-  "mlflow_run_id": "3e91ab2",
-  "prediction": 0,
-  "confidence": 0.98,
-  "latency_ms": 12,
-  "user_id_pseudo": "8f3a9ab2..."
-}
-```
-
-Chaque prédiction devient donc traçable.
+- Model Cards
+- Responsible AI
+- AI Act documentation requirements
+- Hugging Face Hub
+- Reproducibility
+- Machine Learning Governance
 
 ---
-
-
-# Résultat final
-
-À la fin de cet exercice, vous avez construit une première version d’un système ML capable de :
-
-* exposer un modèle via une API
-* tracer chaque prédiction
-* pseudonymiser les utilisateurs
-* relier une prédiction au pipeline ML
-* reconstruire un historique complet via un audit trail
-
-Même si cette architecture reste volontairement simplifiée, elle reprend déjà plusieurs principes fondamentaux des systèmes MLOps modernes :
-
-* observabilité
-* auditabilité
-* reproductibilité
-* gouvernance des modèles
-* traçabilité
-
----
-
