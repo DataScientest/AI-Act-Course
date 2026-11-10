@@ -85,4 +85,6 @@ The model achieves an overall **Accuracy of 1.00** (100%) on the test set (30 ex
 - **Limited evaluation setup:** We recommend implementing a more robust evaluation strategy, such as cross-validation, prior to any deployment.
 
 ## Reproductibility
-<!-- Complete after section B.10 -->
+Git commit (git_sha): 7c21793f4dbc87ea89bb27104462308ac9432bab
+MLflow run_id: N/A (not used in this chapter)
+Dataset hash: N/A (not used in this chapter)
