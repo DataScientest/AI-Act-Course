@@ -1,5 +1,5 @@
 ---
-license: mit
+license: apache-2.0
 language:
 - en
 datasets:
